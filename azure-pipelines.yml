@@ -1,0 +1,41 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureWebAppName: 'Alex-Alen-HW-TA-21V'  # Replace with your Azure App name
+  pythonVersion: '3.11'
+
+steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(pythonVersion)'
+      addToPath: true
+
+  - script: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install -r requirements.txt
+    displayName: 'Install dependencies'
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/flask-api.zip'
+      replaceExistingArchive: true
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'drop'
+
+  - task: AzureWebApp@1
+    inputs:
+      azureSubscription: '<YOUR-AZURE-CONNECTION-NAME>'
+      appType: webAppLinux
+      appName: '$(azureWebAppName)'
+      package: '$(Build.ArtifactStagingDirectory)/flask-api.zip'
